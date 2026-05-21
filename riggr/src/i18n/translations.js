@@ -160,7 +160,7 @@ export const translations = {
         'Når du sender forespørsel lagres navn, e-post, telefon, datoer, valgte produkter og melding i Google Sheets.',
         'Opplysningene brukes kun til å behandle leieforespørselen og avtale praktiske detaljer.',
         'Riggr bruker ikke cookies, innlogging, betaling eller sporingsverktøy på nettsiden.',
-        'Du kan be om innsyn eller sletting ved å kontakte kontakt@riggr.no.',
+        'Du kan be om innsyn eller sletting ved å kontakte daniea1602@gmail.com.',
       ],
       rentalTerms: [
         'Leie er ikke bekreftet før du har fått manuell bekreftelse fra Riggr.',
@@ -343,7 +343,7 @@ export const translations = {
         'When you send a request, your name, email, phone number, dates, selected products and message are stored in Google Sheets.',
         'The information is only used to process the rental request and agree on practical details.',
         'Riggr does not use cookies, login, payment or tracking tools on the website.',
-        'You can request access or deletion by contacting kontakt@riggr.no.',
+        'You can request access or deletion by contacting daniea1602@gmail.com.',
       ],
       rentalTerms: [
         'The rental is not confirmed until you have received manual confirmation from Riggr.',
