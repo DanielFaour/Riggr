@@ -58,7 +58,7 @@ function ProductGrid({ products, isLoading, error, onRequestProduct }) {
           <h2>Utstyr til leie</h2>
           <p>Velg produktet du trenger, sjekk tilgjengelighet og send en forespørsel.</p>
           <p className="pricing-note">
-            Helg: +50 kr. Studentforeninger slipper tillegget.
+            Helg fredag-søndag: +50 kr per produkt per dag. Studentforeninger slipper tillegget.
           </p>
         </div>
 

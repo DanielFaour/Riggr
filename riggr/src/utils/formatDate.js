@@ -23,3 +23,13 @@ export function formatPrice(price) {
 
   return `${numberPrice.toLocaleString('nb-NO')} kr / dag`
 }
+
+export function formatCurrency(price) {
+  const numberPrice = Number(price)
+
+  if (!Number.isFinite(numberPrice)) {
+    return 'Pris på forespørsel'
+  }
+
+  return `${numberPrice.toLocaleString('nb-NO')} kr`
+}

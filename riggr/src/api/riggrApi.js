@@ -52,6 +52,9 @@ export async function createBooking(bookingData) {
 
   const data = await requestJson(getApiUrl(), {
     method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
     body: JSON.stringify(payload),
   })
 

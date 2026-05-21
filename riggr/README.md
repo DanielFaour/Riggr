@@ -1,6 +1,6 @@
 # Riggr
 
-Riggr er en enkel rental-nettside for høyttalere og eventutstyr i Oslo. Brukere ser aktive produkter, sjekker utilgjengelige datoer og sender en bookingforespørsel som lagres i Google Sheets.
+Riggr er en enkel rental-nettside for hoyttalere og eventutstyr i Oslo. Brukere ser aktive produkter, sjekker utilgjengelige datoer og sender en bookingforesporsel som lagres i Google Sheets.
 
 ## Tech stack
 
@@ -21,12 +21,12 @@ Google Sheet-et har to faner.
 | id | name | category | description | pricePerDay | imageUrl | active |
 | --- | --- | --- | --- | --- | --- | --- |
 
-`active` må være `true` for at produktet skal vises i katalogen.
+`active` ma vaere `true` for at produktet skal vises i katalogen.
 
 ### Bookings
 
-| id | productId | name | email | phone | startDate | endDate | message | status | createdAt |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| id | orderId | productId | name | email | phone | startDate | endDate | message | status | createdAt | estPrice |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 Gyldige statuser:
 
@@ -36,17 +36,17 @@ Gyldige statuser:
 
 Bookinger med `pending` og `confirmed` blokkerer valgte datoer. `declined` ignoreres i tilgjengelighetssjekken.
 
-## Konfigurer miljøvariabler
+## Konfigurer miljo
 
-Lag en lokal `.env` basert på `.env.example`:
+Lag en lokal `.env` basert pa `.env.example`:
 
 ```bash
 VITE_RIGGR_API_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 ```
 
-Verdien skal være den deployede Google Apps Script Web App URL-en.
+Verdien skal vaere den deployede Google Apps Script Web App URL-en.
 
-## Kjør lokalt
+## Kjor lokalt
 
 ```bash
 npm install
@@ -67,10 +67,14 @@ Frontend henter bookinger fra:
 GET {VITE_RIGGR_API_URL}?action=bookings
 ```
 
-Når en bruker sender forespørsel, postes bookingdata til Apps Script:
+Nar en bruker sender foresporsel, postes bookingdata til Apps Script:
 
 ```text
 POST {VITE_RIGGR_API_URL}
 ```
 
-Bookingen lagres manuelt i Google Sheets med status `pending`. Etter innsending får brukeren beskjed om at forespørselen må bekreftes manuelt, og frontend henter bookinger på nytt slik at tilgjengeligheten oppdateres.
+Bookingen lagres manuelt i Google Sheets med status `pending`. Etter innsending far brukeren beskjed om at foresporselen ma bekreftes manuelt, og frontend henter bookinger pa nytt slik at tilgjengeligheten oppdateres.
+
+`orderId` er felles for alle bookingrader i samme foresporsel. Hvis en kunde velger flere produkter, lagres det fortsatt en rad per produkt, men radene kan grupperes pa samme `orderId`.
+
+`estPrice` sendes med som estimert pris for bookingraden. Estimatet regnes fra dagspris, antall valgte dager og eventuelt helgetillegg pa 50 kr per produkt per helgedag fredag-sondag. Studentforeninger kan markeres i skjemaet, og da fjernes helgetillegget fra estimatet.

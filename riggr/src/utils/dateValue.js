@@ -14,6 +14,10 @@ function toDateKey(date) {
   return `${year}-${month}-${day}`
 }
 
+export function getTodayDateKey() {
+  return toDateKey(new Date())
+}
+
 export function normalizeDateString(value) {
   if (!value) {
     return ''
