@@ -33,6 +33,20 @@ function App() {
     [products],
   )
 
+  const refreshProducts = useCallback(async () => {
+    setProductsLoading(true)
+    setProductsError('')
+
+    try {
+      const productsResponse = await getProducts()
+      setProducts(productsResponse)
+    } catch (requestError) {
+      setProductsError(requestError.message)
+    } finally {
+      setProductsLoading(false)
+    }
+  }, [])
+
   const refreshBookings = useCallback(async () => {
     setBookingsLoading(true)
     setBookingsError('')
@@ -52,6 +66,9 @@ function App() {
     let isMounted = true
 
     async function loadInitialProducts() {
+      setProductsLoading(true)
+      setProductsError('')
+
       try {
         const productsResponse = await getProducts()
 
@@ -147,6 +164,7 @@ function App() {
           isLoading={productsLoading}
           error={productsError}
           onRequestProduct={handleRequestProduct}
+          onRefreshProducts={refreshProducts}
           language={language}
           t={t}
         />

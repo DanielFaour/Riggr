@@ -6,7 +6,15 @@ function normalizeText(value) {
   return String(value || '').trim().toLowerCase()
 }
 
-function ProductGrid({ products, isLoading, error, onRequestProduct, language, t }) {
+function ProductGrid({
+  products,
+  isLoading,
+  error,
+  onRequestProduct,
+  onRefreshProducts,
+  language,
+  t,
+}) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('recommended')
@@ -76,7 +84,10 @@ function ProductGrid({ products, isLoading, error, onRequestProduct, language, t
 
         {!isLoading && error ? (
           <div className="state-card state-card-error" role="alert">
-            {error}
+            <p>{error}</p>
+            <button className="button button-secondary" type="button" onClick={onRefreshProducts}>
+              {t.products.retry}
+            </button>
           </div>
         ) : null}
 

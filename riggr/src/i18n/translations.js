@@ -39,6 +39,7 @@ export const translations = {
       pricingNote:
         'Helg fredag-søndag: +50 kr per produkt per dag. Studentforeninger slipper tillegget.',
       loading: 'Laster utstyr...',
+      retry: 'Prøv igjen',
       empty: 'Ingen aktive produkter er registrert ennå. Kom tilbake snart.',
       filtersLabel: 'Filtrer utstyr',
       searchLabel: 'Søk',
@@ -221,6 +222,7 @@ export const translations = {
       pricingNote:
         'Weekend Friday-Sunday: +50 NOK per product per day. Student associations do not pay the weekend fee.',
       loading: 'Loading equipment...',
+      retry: 'Try again',
       empty: 'No active products are registered yet. Check back soon.',
       filtersLabel: 'Filter equipment',
       searchLabel: 'Search',

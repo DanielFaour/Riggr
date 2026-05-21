@@ -428,6 +428,9 @@ textarea:focus-visible {
 }
 
 .state-card {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
   padding: 24px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
