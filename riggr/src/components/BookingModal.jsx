@@ -5,7 +5,6 @@ import { calculateEstimatedBookingPrice } from '../utils/estimatePrice'
 import { formatCurrency, formatDate, formatPrice } from '../utils/formatDate'
 import {
   getProductCategory,
-  getProductDescription,
   getProductName,
   getProductSearchText,
 } from '../utils/productDisplay'
@@ -53,6 +52,7 @@ function BookingModal({
   onRefreshBookings,
   onClose,
   onSubmit,
+  onSuccess,
   language,
   t,
 }) {
@@ -63,8 +63,6 @@ function BookingModal({
   const [productSearch, setProductSearch] = useState('')
   const [status, setStatus] = useState('idle')
   const [errorMessage, setErrorMessage] = useState('')
-  const productName = getProductName(product, language)
-  const productDescription = getProductDescription(product, language)
 
   const selectedProducts = useMemo(
     () => products.filter((availableProduct) => selectedProductIds.includes(availableProduct.id)),
@@ -251,7 +249,7 @@ function BookingModal({
         isStudentAssociation: formData.isStudentAssociation,
       })
       setFormData(emptyForm)
-      setStatus('success')
+      onSuccess()
     } catch (submitError) {
       setStatus('error')
       setErrorMessage(
@@ -278,10 +276,6 @@ function BookingModal({
         <div className="booking-intro">
           <p className="product-category">{t.booking.requestLabel}</p>
           <h2 id={`${formId}-title`}>{t.booking.title}</h2>
-          <p>{t.booking.intro(productName)}</p>
-          {productDescription ? <p>{productDescription}</p> : null}
-          <strong>{t.booking.totalPerDay(formatPrice(selectedPricePerDay, language, t))}</strong>
-          <p className="pricing-note">{t.booking.pricingNote}</p>
         </div>
 
         {showProductPicker ? (
@@ -433,6 +427,7 @@ function BookingModal({
               </>
             )}
           </div>
+          <p className="price-note">{t.booking.pricingNote}</p>
 
           {isBlockedByOverlap ? (
             <div className="form-message form-message-warning" role="alert">
@@ -491,12 +486,6 @@ function BookingModal({
               placeholder={t.booking.messagePlaceholder}
             />
           </label>
-
-          {status === 'success' ? (
-            <div className="form-message form-message-success" role="status">
-              {t.booking.success}
-            </div>
-          ) : null}
 
           {status === 'error' && errorMessage ? (
             <div className="form-message form-message-error" role="alert">

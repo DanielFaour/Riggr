@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createBooking, getBookings, getProducts } from './api/riggrApi'
 import BookingModal from './components/BookingModal'
+import BookingSuccess from './components/BookingSuccess'
 import Footer from './components/Footer'
 import Header from './components/Header'
 import Hero from './components/Hero'
@@ -25,8 +26,11 @@ function App() {
   const [productsError, setProductsError] = useState('')
   const [bookingsError, setBookingsError] = useState('')
   const [bookingsUpdatedAt, setBookingsUpdatedAt] = useState(null)
+  const [showBookingSuccess, setShowBookingSuccess] = useState(false)
+  const [bookingSuccessId, setBookingSuccessId] = useState(0)
   const [language, setLanguage] = useState('no')
   const t = translations[language]
+  const isOverlayOpen = Boolean(selectedProduct) || showBookingSuccess
 
   const activeProducts = useMemo(
     () => products.filter((product) => String(product.active).toLowerCase() === 'true'),
@@ -121,6 +125,51 @@ function App() {
     document.documentElement.lang = language === 'en' ? 'en' : 'no'
   }, [language])
 
+  useEffect(() => {
+    if (!isOverlayOpen) {
+      return undefined
+    }
+
+    const scrollY = window.scrollY
+    const originalBodyStyles = {
+      left: document.body.style.left,
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      right: document.body.style.right,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    }
+
+    document.body.style.left = '0'
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.right = '0'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    return () => {
+      document.body.style.left = originalBodyStyles.left
+      document.body.style.overflow = originalBodyStyles.overflow
+      document.body.style.position = originalBodyStyles.position
+      document.body.style.right = originalBodyStyles.right
+      document.body.style.top = originalBodyStyles.top
+      document.body.style.width = originalBodyStyles.width
+      window.scrollTo(0, scrollY)
+    }
+  }, [isOverlayOpen])
+
+  useEffect(() => {
+    if (!showBookingSuccess) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowBookingSuccess(false)
+    }, 2500)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [bookingSuccessId, showBookingSuccess])
+
   const handleBookingSubmit = async ({
     bookingItems,
     isStudentAssociation,
@@ -154,6 +203,12 @@ function App() {
     refreshBookings()
   }
 
+  const handleBookingSuccess = () => {
+    setSelectedProduct(null)
+    setBookingSuccessId((currentId) => currentId + 1)
+    setShowBookingSuccess(true)
+  }
+
   return (
     <>
       <Header language={language} onLanguageChange={setLanguage} t={t} />
@@ -183,9 +238,13 @@ function App() {
           onRefreshBookings={refreshBookings}
           onClose={() => setSelectedProduct(null)}
           onSubmit={handleBookingSubmit}
+          onSuccess={handleBookingSuccess}
           language={language}
           t={t}
         />
+      ) : null}
+      {showBookingSuccess ? (
+        <BookingSuccess key={bookingSuccessId} message={t.booking.success} />
       ) : null}
     </>
   )
