@@ -1,7 +1,12 @@
 function Header() {
+  const scrollToTop = (event) => {
+    event.preventDefault()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <header className="site-header">
-      <a className="brand" href="#top" aria-label="Riggr forside">
+      <a className="brand" href="#top" onClick={scrollToTop} aria-label="Riggr forside">
         Riggr
       </a>
       <nav className="site-nav" aria-label="Hovednavigasjon">

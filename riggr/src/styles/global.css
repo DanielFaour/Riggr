@@ -36,6 +36,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 92px;
 }
 
 body {
@@ -137,8 +138,8 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 48px;
+  padding: 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.76);
   border-radius: 999px;
   color: var(--text);
@@ -429,6 +430,10 @@ textarea:focus-visible {
 
 .product-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   border: 1px solid rgba(222, 217, 204, 0.9);
   border-radius: var(--radius);
@@ -472,8 +477,18 @@ textarea:focus-visible {
 
 .product-content {
   display: grid;
+  grid-template-rows: auto auto 1fr auto;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
+  overflow: hidden;
+}
+
+.product-card > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .product-category {
@@ -484,7 +499,6 @@ textarea:focus-visible {
 }
 
 .product-description {
-  min-height: 52px;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -495,11 +509,21 @@ textarea:focus-visible {
   justify-content: space-between;
   gap: 16px;
   margin-top: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .product-price {
-  flex: 0 0 auto;
+  min-width: 0;
   font-weight: 850;
+}
+
+.product-content h3,
+.product-category,
+.product-description,
+.product-price {
+  overflow-wrap: anywhere;
 }
 
 .steps-grid {
@@ -611,13 +635,16 @@ textarea:focus-visible {
   justify-content: flex-end;
   padding: 16px;
   background: rgba(23, 23, 23, 0.44);
+  overflow: hidden;
 }
 
 .booking-panel {
   position: relative;
   width: min(100%, 640px);
   height: 100%;
+  min-width: 0;
   overflow: auto;
+  overflow-x: hidden;
   padding: 28px;
   border-radius: 28px;
   background: var(--surface);
@@ -886,6 +913,10 @@ textarea:focus-visible {
   gap: 14px;
 }
 
+.form-grid > * {
+  min-width: 0;
+}
+
 .checkbox-field {
   display: flex;
   align-items: center;
@@ -926,6 +957,7 @@ textarea:focus-visible {
 label {
   display: grid;
   gap: 8px;
+  min-width: 0;
   color: var(--text);
   font-size: 0.92rem;
   font-weight: 760;
@@ -935,6 +967,7 @@ input,
 select,
 textarea {
   width: 100%;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 14px;
   color: var(--text);
@@ -1002,6 +1035,16 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .product-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .product-footer .button {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .hero-section {
     padding-top: 34px;
   }
@@ -1012,6 +1055,10 @@ textarea {
 }
 
 @media (max-width: 680px) {
+  html {
+    scroll-padding-top: 74px;
+  }
+
   .site-header {
     align-items: center;
     gap: 8px;
@@ -1020,7 +1067,7 @@ textarea {
   }
 
   .brand {
-    min-height: 36px;
+    min-height: 42px;
     padding: 0 12px;
     font-size: 1.08rem;
   }
@@ -1075,11 +1122,6 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .product-footer .button,
-  .product-footer {
-    width: 100%;
-  }
-
   .footer-contact {
     text-align: left;
   }
@@ -1089,9 +1131,11 @@ textarea {
   }
 
   .booking-panel {
-    width: 100%;
-    border-radius: 22px 22px 0 0;
-    padding: 24px 18px 28px;
+    width: 100dvw;
+    max-width: 100dvw;
+    height: 100dvh;
+    border-radius: 0;
+    padding: 24px 16px 28px;
   }
 
   .form-grid {
