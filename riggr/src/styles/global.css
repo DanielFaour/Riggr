@@ -968,6 +968,7 @@ select,
 textarea {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 14px;
   color: var(--text);
@@ -977,6 +978,37 @@ textarea {
 input {
   min-height: 48px;
   padding: 0 14px;
+}
+
+input[type="date"] {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding-inline: 12px;
+  overflow: hidden;
+  color-scheme: light;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-height: 1.4em;
+  margin: 0;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
 }
 
 select {
