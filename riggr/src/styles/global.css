@@ -1110,6 +1110,10 @@ textarea:focus-visible {
   line-height: 1.45;
 }
 
+.price-checkbox {
+  margin-top: -4px;
+}
+
 .price-note::before {
   flex: 0 0 auto;
   width: 6px;

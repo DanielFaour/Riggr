@@ -64,7 +64,9 @@ function BookingModal({
   const [productSearch, setProductSearch] = useState('')
   const [status, setStatus] = useState('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [freshDateErrorMessage, setFreshDateErrorMessage] = useState('')
   const [showPrivacyDetails, setShowPrivacyDetails] = useState(false)
+  const todayDateKey = getTodayDateKey()
 
   const selectedProducts = useMemo(
     () => products.filter((availableProduct) => selectedProductIds.includes(availableProduct.id)),
@@ -117,11 +119,53 @@ function BookingModal({
     )
   }, [formData.endDate, formData.startDate, unavailableBookings])
 
+  const dateErrorMessage = useMemo(() => {
+    if (!formData.startDate && !formData.endDate) {
+      return ''
+    }
+
+    if (formData.startDate && formData.startDate <= todayDateKey) {
+      return t.booking.validation.pastStartDate
+    }
+
+    if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
+      return t.booking.validation.endBeforeStart
+    }
+
+    if (overlapBooking) {
+      return t.booking.validation.unavailableDate
+    }
+
+    return freshDateErrorMessage
+  }, [formData.endDate, formData.startDate, freshDateErrorMessage, overlapBooking, t, todayDateKey])
+
+  const findOverlapInBookings = (bookingsToCheck) => {
+    if (!formData.startDate || !formData.endDate) {
+      return null
+    }
+
+    const bookingsUnavailableForSelection = selectedProductIds.flatMap((productId) =>
+      getUnavailableBookingsForProduct(bookingsToCheck, productId),
+    )
+
+    return (
+      bookingsUnavailableForSelection.find((booking) =>
+        doesDateRangeOverlap(
+          formData.startDate,
+          formData.endDate,
+          booking.startDate,
+          booking.endDate,
+        ),
+      ) || null
+    )
+  }
+
   const handleChange = (event) => {
     const { checked, name, type, value } = event.target
     setFormData((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
     setStatus('idle')
     setErrorMessage('')
+    setFreshDateErrorMessage('')
   }
 
   const priceEstimate = useMemo(
@@ -171,12 +215,14 @@ function BookingModal({
     )
     setStatus('idle')
     setErrorMessage('')
+    setFreshDateErrorMessage('')
   }
 
   const removeSelectedProduct = (productId) => {
     setSelectedProductIds((currentIds) => currentIds.filter((currentId) => currentId !== productId))
     setStatus('idle')
     setErrorMessage('')
+    setFreshDateErrorMessage('')
   }
 
   const validateForm = () => {
@@ -196,7 +242,11 @@ function BookingModal({
       return t.booking.validation.availabilityError
     }
 
-    if (formData.startDate < todayDateKey) {
+    if (dateErrorMessage) {
+      return dateErrorMessage
+    }
+
+    if (formData.startDate <= todayDateKey) {
       return t.booking.validation.pastStartDate
     }
 
@@ -220,10 +270,6 @@ function BookingModal({
       return t.booking.validation.privacyRequired
     }
 
-    if (overlapBooking) {
-      return t.booking.validation.overlap
-    }
-
     return ''
   }
 
@@ -241,6 +287,20 @@ function BookingModal({
     setErrorMessage('')
 
     try {
+      const latestBookings = await onRefreshBookings()
+
+      if (!Array.isArray(latestBookings)) {
+        setStatus('error')
+        setErrorMessage(t.booking.validation.availabilityError)
+        return
+      }
+
+      if (findOverlapInBookings(latestBookings)) {
+        setStatus('error')
+        setFreshDateErrorMessage(t.booking.validation.unavailableDate)
+        return
+      }
+
       await onSubmit({
         bookingItems,
         selectedProductNames: selectedProducts.map((selectedProduct) =>
@@ -265,9 +325,7 @@ function BookingModal({
   }
 
   const isSubmitting = status === 'submitting'
-  const isBlockedByOverlap = Boolean(overlapBooking)
   const cannotCheckAvailability = bookingsLoading || Boolean(bookingsError)
-  const todayDateKey = getTodayDateKey()
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -389,17 +447,11 @@ function BookingModal({
               t={t}
             />
           </div>
-
-          <label className="checkbox-field" htmlFor={`${formId}-isStudentAssociation`}>
-            <input
-              id={`${formId}-isStudentAssociation`}
-              type="checkbox"
-              name="isStudentAssociation"
-              checked={formData.isStudentAssociation}
-              onChange={handleChange}
-            />
-            <span>{t.booking.studentAssociation}</span>
-          </label>
+          {dateErrorMessage ? (
+            <div className="form-message form-message-error date-error" role="alert">
+              {dateErrorMessage}
+            </div>
+          ) : null}
 
           <div className="price-estimate" aria-live="polite">
             <span>{t.booking.priceEstimate}</span>
@@ -433,13 +485,17 @@ function BookingModal({
               </>
             )}
           </div>
+          <label className="checkbox-field price-checkbox" htmlFor={`${formId}-isStudentAssociation`}>
+            <input
+              id={`${formId}-isStudentAssociation`}
+              type="checkbox"
+              name="isStudentAssociation"
+              checked={formData.isStudentAssociation}
+              onChange={handleChange}
+            />
+            <span>{t.booking.studentAssociation}</span>
+          </label>
           <p className="price-note">{t.booking.pricingNote}</p>
-
-          {isBlockedByOverlap ? (
-            <div className="form-message form-message-warning" role="alert">
-              {t.booking.overlapWarning}
-            </div>
-          ) : null}
 
           <label htmlFor={`${formId}-name`}>
             {t.booking.name}
@@ -525,7 +581,7 @@ function BookingModal({
             type="submit"
             disabled={
               isSubmitting ||
-              isBlockedByOverlap ||
+              Boolean(dateErrorMessage) ||
               cannotCheckAvailability ||
               selectedProductIds.length === 0
             }

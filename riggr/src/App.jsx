@@ -59,8 +59,10 @@ function App() {
       const bookingsResponse = await getBookings()
       setBookings(bookingsResponse)
       setBookingsUpdatedAt(new Date())
+      return bookingsResponse
     } catch (requestError) {
       setBookingsError(requestError.message)
+      return null
     } finally {
       setBookingsLoading(false)
     }
