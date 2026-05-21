@@ -18,6 +18,7 @@ const emptyForm = {
   phone: '',
   message: '',
   isStudentAssociation: false,
+  acceptsPrivacy: false,
 }
 
 function DateField({ id, label, name, min, value, onChange, language, t }) {
@@ -63,6 +64,7 @@ function BookingModal({
   const [productSearch, setProductSearch] = useState('')
   const [status, setStatus] = useState('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [showPrivacyDetails, setShowPrivacyDetails] = useState(false)
 
   const selectedProducts = useMemo(
     () => products.filter((availableProduct) => selectedProductIds.includes(availableProduct.id)),
@@ -212,6 +214,10 @@ function BookingModal({
 
     if (!formData.phone.trim()) {
       return t.booking.validation.phoneRequired
+    }
+
+    if (!formData.acceptsPrivacy) {
+      return t.booking.validation.privacyRequired
     }
 
     if (overlapBooking) {
@@ -487,6 +493,27 @@ function BookingModal({
             />
           </label>
 
+          <div className="privacy-consent">
+            <label className="checkbox-field" htmlFor={`${formId}-acceptsPrivacy`}>
+              <input
+                id={`${formId}-acceptsPrivacy`}
+                type="checkbox"
+                name="acceptsPrivacy"
+                checked={formData.acceptsPrivacy}
+                onChange={handleChange}
+                required
+              />
+              <span>{t.booking.privacyConsent}</span>
+            </label>
+            <button
+              className="privacy-link"
+              type="button"
+              onClick={() => setShowPrivacyDetails(true)}
+            >
+              {t.booking.privacyLink}
+            </button>
+          </div>
+
           {status === 'error' && errorMessage ? (
             <div className="form-message form-message-error" role="alert">
               {errorMessage}
@@ -506,6 +533,50 @@ function BookingModal({
             {isSubmitting ? t.booking.submitting : t.booking.submit(selectedProductIds.length)}
           </button>
         </form>
+
+        {showPrivacyDetails ? (
+          <div
+            className="privacy-dialog-backdrop"
+            onMouseDown={(event) =>
+              event.target === event.currentTarget && setShowPrivacyDetails(false)
+            }
+          >
+            <section
+              className="privacy-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`${formId}-privacy-title`}
+            >
+              <button
+                className="close-button"
+                type="button"
+                onClick={() => setShowPrivacyDetails(false)}
+                aria-label={t.booking.closePrivacyLabel}
+              />
+              <p className="product-category">{t.info.eyebrow}</p>
+              <h3 id={`${formId}-privacy-title`}>{t.info.title}</h3>
+              <p>{t.info.intro}</p>
+              <div className="privacy-dialog-grid">
+                <div>
+                  <strong>{t.info.privacyTitle}</strong>
+                  <ul>
+                    {t.info.privacyPoints.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <strong>{t.info.rentalTermsTitle}</strong>
+                  <ul>
+                    {t.info.rentalTerms.map((term) => (
+                      <li key={term}>{term}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </section>
     </div>
   )
