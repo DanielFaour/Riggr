@@ -7,6 +7,7 @@ import Hero from './components/Hero'
 import HowItWorks from './components/HowItWorks'
 import InfoSection from './components/InfoSection'
 import ProductGrid from './components/ProductGrid'
+import { translations } from './i18n/translations'
 
 function createOrderId() {
   const timestampPart = Date.now().toString(36).slice(-6)
@@ -24,6 +25,8 @@ function App() {
   const [productsError, setProductsError] = useState('')
   const [bookingsError, setBookingsError] = useState('')
   const [bookingsUpdatedAt, setBookingsUpdatedAt] = useState(null)
+  const [language, setLanguage] = useState('no')
+  const t = translations[language]
 
   const activeProducts = useMemo(
     () => products.filter((product) => String(product.active).toLowerCase() === 'true'),
@@ -97,6 +100,10 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    document.documentElement.lang = language === 'en' ? 'en' : 'no'
+  }, [language])
+
   const handleBookingSubmit = async ({
     bookingItems,
     isStudentAssociation,
@@ -104,10 +111,9 @@ function App() {
     ...bookingData
   }) => {
     const orderId = createOrderId()
-    const selectedProductsMessage = `Valgte produkter: ${selectedProductNames.join(', ')}`
-    const studentAssociationMessage = isStudentAssociation
-      ? 'Studentforening: ja'
-      : 'Studentforening: nei'
+    const selectedProductsMessage = t.booking.sheetMessage.selectedProducts(selectedProductNames)
+    const studentAssociationMessage =
+      t.booking.sheetMessage.studentAssociation(isStudentAssociation)
     const message = bookingData.message
       ? `${bookingData.message}\n\n${selectedProductsMessage}\n${studentAssociationMessage}`
       : `${selectedProductsMessage}\n${studentAssociationMessage}`
@@ -133,19 +139,21 @@ function App() {
 
   return (
     <>
-      <Header />
+      <Header language={language} onLanguageChange={setLanguage} t={t} />
       <main>
-        <Hero />
+        <Hero t={t} />
         <ProductGrid
           products={activeProducts}
           isLoading={productsLoading}
           error={productsError}
           onRequestProduct={handleRequestProduct}
+          language={language}
+          t={t}
         />
-        <HowItWorks />
-        <InfoSection />
+        <HowItWorks t={t} />
+        <InfoSection t={t} />
       </main>
-      <Footer />
+      <Footer t={t} />
       {selectedProduct ? (
         <BookingModal
           product={selectedProduct}
@@ -157,6 +165,8 @@ function App() {
           onRefreshBookings={refreshBookings}
           onClose={() => setSelectedProduct(null)}
           onSubmit={handleBookingSubmit}
+          language={language}
+          t={t}
         />
       ) : null}
     </>

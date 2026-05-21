@@ -1,21 +1,32 @@
 import { useMemo, useState } from 'react'
+import { getProductCategory, getProductName, getProductSearchText } from '../utils/productDisplay'
 import ProductCard from './ProductCard'
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase()
 }
 
-function ProductGrid({ products, isLoading, error, onRequestProduct }) {
+function ProductGrid({ products, isLoading, error, onRequestProduct, language, t }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('recommended')
 
   const categories = useMemo(
-    () =>
-      Array.from(
-        new Set(products.map((product) => product.category).filter(Boolean)),
-      ).sort((categoryA, categoryB) => categoryA.localeCompare(categoryB, 'nb-NO')),
-    [products],
+    () => {
+      const categoryMap = new Map()
+
+      products.forEach((product) => {
+        if (product.category && !categoryMap.has(product.category)) {
+          categoryMap.set(product.category, getProductCategory(product, language))
+        }
+      })
+
+      return Array.from(categoryMap, ([value, label]) => ({ label, value })).sort(
+        (categoryA, categoryB) =>
+          categoryA.label.localeCompare(categoryB.label, language === 'en' ? 'en-GB' : 'nb-NO'),
+      )
+    },
+    [language, products],
   )
 
   const filteredProducts = useMemo(() => {
@@ -26,16 +37,17 @@ function ProductGrid({ products, isLoading, error, onRequestProduct }) {
         const matchesCategory =
           selectedCategory === 'all' || product.category === selectedCategory
 
-        const searchableText = normalizeText(
-          `${product.name} ${product.category} ${product.description}`,
-        )
+        const searchableText = normalizeText(getProductSearchText(product, language))
         const matchesSearch = !normalizedSearch || searchableText.includes(normalizedSearch)
 
         return matchesCategory && matchesSearch
       })
       .sort((productA, productB) => {
         if (sortBy === 'name') {
-          return productA.name.localeCompare(productB.name, 'nb-NO')
+          return getProductName(productA, language).localeCompare(
+            getProductName(productB, language),
+            language === 'en' ? 'en-GB' : 'nb-NO',
+          )
         }
 
         if (sortBy === 'price-low') {
@@ -48,21 +60,19 @@ function ProductGrid({ products, isLoading, error, onRequestProduct }) {
 
         return 0
       })
-  }, [products, searchTerm, selectedCategory, sortBy])
+  }, [language, products, searchTerm, selectedCategory, sortBy])
 
   return (
     <section className="section" id="utstyr">
       <div className="container">
         <div className="section-heading">
-          <p className="eyebrow">Katalog</p>
-          <h2>Utstyr til leie</h2>
-          <p>Velg produktet du trenger, sjekk tilgjengelighet og send en forespørsel.</p>
-          <p className="pricing-note">
-            Helg fredag-søndag: +50 kr per produkt per dag. Studentforeninger slipper tillegget.
-          </p>
+          <p className="eyebrow">{t.products.eyebrow}</p>
+          <h2>{t.products.title}</h2>
+          <p>{t.products.subtitle}</p>
+          <p className="pricing-note">{t.products.pricingNote}</p>
         </div>
 
-        {isLoading ? <div className="state-card">Laster utstyr...</div> : null}
+        {isLoading ? <div className="state-card">{t.products.loading}</div> : null}
 
         {!isLoading && error ? (
           <div className="state-card state-card-error" role="alert">
@@ -71,58 +81,56 @@ function ProductGrid({ products, isLoading, error, onRequestProduct }) {
         ) : null}
 
         {!isLoading && !error && products.length === 0 ? (
-          <div className="state-card">
-            Ingen aktive produkter er registrert ennå. Kom tilbake snart.
-          </div>
+          <div className="state-card">{t.products.empty}</div>
         ) : null}
 
         {!isLoading && !error && products.length > 0 ? (
           <>
-            <div className="catalog-tools" aria-label="Filtrer utstyr">
+            <div className="catalog-tools" aria-label={t.products.filtersLabel}>
               <label htmlFor="product-search">
-                Søk
+                {t.products.searchLabel}
                 <input
                   id="product-search"
                   type="search"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Søk etter Soundboks, JBL..."
+                  placeholder={t.products.searchPlaceholder}
                 />
               </label>
 
               <label htmlFor="product-category">
-                Kategori
+                {t.products.categoryLabel}
                 <select
                   id="product-category"
                   value={selectedCategory}
                   onChange={(event) => setSelectedCategory(event.target.value)}
                 >
-                  <option value="all">Alle kategorier</option>
+                  <option value="all">{t.products.allCategories}</option>
                   {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                    <option key={category.value} value={category.value}>
+                      {category.label}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label htmlFor="product-sort">
-                Sortering
+                {t.products.sortLabel}
                 <select
                   id="product-sort"
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
                 >
-                  <option value="recommended">Anbefalt</option>
-                  <option value="name">Navn A-Å</option>
-                  <option value="price-low">Laveste pris</option>
-                  <option value="price-high">Høyeste pris</option>
+                  <option value="recommended">{t.products.recommended}</option>
+                  <option value="name">{t.products.nameSort}</option>
+                  <option value="price-low">{t.products.priceLow}</option>
+                  <option value="price-high">{t.products.priceHigh}</option>
                 </select>
               </label>
             </div>
 
             <p className="catalog-count" aria-live="polite">
-              Viser {filteredProducts.length} av {products.length} produkter.
+              {t.products.count(filteredProducts.length, products.length)}
             </p>
 
             {filteredProducts.length > 0 ? (
@@ -132,13 +140,13 @@ function ProductGrid({ products, isLoading, error, onRequestProduct }) {
                     key={product.id}
                     product={product}
                     onRequest={() => onRequestProduct(product)}
+                    language={language}
+                    t={t}
                   />
                 ))}
               </div>
             ) : (
-              <div className="state-card">
-                Ingen produkter matcher søket eller kategorien du valgte.
-              </div>
+              <div className="state-card">{t.products.noMatches}</div>
             )}
           </>
         ) : null}

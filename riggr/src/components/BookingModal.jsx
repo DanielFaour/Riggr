@@ -2,7 +2,13 @@ import { useId, useMemo, useState } from 'react'
 import { doesDateRangeOverlap, getUnavailableBookingsForProduct } from '../utils/dateOverlap'
 import { getTodayDateKey } from '../utils/dateValue'
 import { calculateEstimatedBookingPrice } from '../utils/estimatePrice'
-import { formatCurrency, formatPrice } from '../utils/formatDate'
+import { formatCurrency, formatDate, formatPrice } from '../utils/formatDate'
+import {
+  getProductCategory,
+  getProductDescription,
+  getProductName,
+  getProductSearchText,
+} from '../utils/productDisplay'
 import Availability from './Availability'
 
 const emptyForm = {
@@ -15,6 +21,28 @@ const emptyForm = {
   isStudentAssociation: false,
 }
 
+function DateField({ id, label, name, min, value, onChange, language, t }) {
+  return (
+    <label className="date-field" htmlFor={id}>
+      <span>{label}</span>
+      <span className={`date-field-display ${value ? '' : 'date-field-placeholder'}`} aria-hidden="true">
+        <span>{value ? formatDate(value, language, t) : t.booking.chooseDate}</span>
+        <span className="date-field-icon" />
+      </span>
+      <input
+        className="date-native-input"
+        id={id}
+        type="date"
+        name={name}
+        min={min}
+        value={value}
+        onChange={onChange}
+        required
+      />
+    </label>
+  )
+}
+
 function BookingModal({
   product,
   products,
@@ -25,6 +53,8 @@ function BookingModal({
   onRefreshBookings,
   onClose,
   onSubmit,
+  language,
+  t,
 }) {
   const formId = useId()
   const [formData, setFormData] = useState(emptyForm)
@@ -33,6 +63,8 @@ function BookingModal({
   const [productSearch, setProductSearch] = useState('')
   const [status, setStatus] = useState('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const productName = getProductName(product, language)
+  const productDescription = getProductDescription(product, language)
 
   const selectedProducts = useMemo(
     () => products.filter((availableProduct) => selectedProductIds.includes(availableProduct.id)),
@@ -64,11 +96,9 @@ function BookingModal({
         return true
       }
 
-      return `${availableProduct.name} ${availableProduct.category} ${availableProduct.description}`
-        .toLowerCase()
-        .includes(normalizedSearch)
+      return getProductSearchText(availableProduct, language).toLowerCase().includes(normalizedSearch)
     })
-  }, [product.id, productSearch, products])
+  }, [language, product.id, productSearch, products])
 
   const overlapBooking = useMemo(() => {
     if (!formData.startDate || !formData.endDate) {
@@ -151,43 +181,43 @@ function BookingModal({
 
   const validateForm = () => {
     if (selectedProductIds.length === 0) {
-      return 'Velg minst ett produkt.'
+      return t.booking.validation.selectProduct
     }
 
     if (!formData.startDate || !formData.endDate) {
-      return 'Velg både startdato og sluttdato.'
+      return t.booking.validation.datesRequired
     }
 
     if (bookingsLoading) {
-      return 'Vent til tilgjengelighet er lastet inn.'
+      return t.booking.validation.waitForAvailability
     }
 
     if (bookingsError) {
-      return 'Kunne ikke sjekke tilgjengelighet akkurat nå. Prøv igjen om litt.'
+      return t.booking.validation.availabilityError
     }
 
     if (formData.startDate < todayDateKey) {
-      return 'Startdato kan ikke være før i dag.'
+      return t.booking.validation.pastStartDate
     }
 
     if (formData.endDate < formData.startDate) {
-      return 'Sluttdato kan ikke være før startdato.'
+      return t.booking.validation.endBeforeStart
     }
 
     if (!formData.name.trim()) {
-      return 'Skriv inn navn.'
+      return t.booking.validation.nameRequired
     }
 
     if (!formData.email.trim()) {
-      return 'Skriv inn e-post.'
+      return t.booking.validation.emailRequired
     }
 
     if (!formData.phone.trim()) {
-      return 'Skriv inn telefonnummer.'
+      return t.booking.validation.phoneRequired
     }
 
     if (overlapBooking) {
-      return 'Valgte datoer overlapper en eksisterende forespørsel eller booking for ett eller flere produkter.'
+      return t.booking.validation.overlap
     }
 
     return ''
@@ -209,7 +239,9 @@ function BookingModal({
     try {
       await onSubmit({
         bookingItems,
-        selectedProductNames: selectedProducts.map((selectedProduct) => selectedProduct.name),
+        selectedProductNames: selectedProducts.map((selectedProduct) =>
+          getProductName(selectedProduct, language),
+        ),
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -223,7 +255,7 @@ function BookingModal({
     } catch (submitError) {
       setStatus('error')
       setErrorMessage(
-        submitError.message || 'Noe gikk galt da forespørselen skulle sendes. Prøv igjen.',
+        submitError.message || t.booking.validation.submitError,
       )
     }
   }
@@ -241,30 +273,27 @@ function BookingModal({
         aria-modal="true"
         aria-labelledby={`${formId}-title`}
       >
-        <button className="close-button" type="button" onClick={onClose} aria-label="Lukk booking" />
+        <button className="close-button" type="button" onClick={onClose} aria-label={t.booking.closeLabel} />
 
         <div className="booking-intro">
-          <p className="product-category">Forespørsel</p>
-          <h2 id={`${formId}-title`}>Velg utstyr</h2>
-          <p>
-            Start med {product.name}. Du kan legge til mer utstyr hvis du trenger det.
-          </p>
-          <strong>{formatPrice(selectedPricePerDay)} samlet</strong>
-          <p className="pricing-note">
-            Helg fredag-søndag: +50 kr per produkt per dag. Studentforeninger slipper tillegget.
-          </p>
+          <p className="product-category">{t.booking.requestLabel}</p>
+          <h2 id={`${formId}-title`}>{t.booking.title}</h2>
+          <p>{t.booking.intro(productName)}</p>
+          {productDescription ? <p>{productDescription}</p> : null}
+          <strong>{t.booking.totalPerDay(formatPrice(selectedPricePerDay, language, t))}</strong>
+          <p className="pricing-note">{t.booking.pricingNote}</p>
         </div>
 
         {showProductPicker ? (
-          <div className="product-picker" aria-label="Legg til flere produkter">
+          <div className="product-picker" aria-label={t.booking.addProductsLabel}>
             <label htmlFor={`${formId}-productSearch`}>
-              Søk etter mer utstyr
+              {t.booking.searchMore}
               <input
                 id={`${formId}-productSearch`}
                 type="search"
                 value={productSearch}
                 onChange={(event) => setProductSearch(event.target.value)}
-                placeholder="Søk etter JBL, stativ, lys..."
+                placeholder={t.booking.searchMorePlaceholder}
               />
             </label>
 
@@ -278,29 +307,29 @@ function BookingModal({
                       onChange={() => handleProductToggle(availableProduct.id)}
                     />
                     <span>
-                      <strong>{availableProduct.name}</strong>
-                      <small>{availableProduct.category}</small>
+                      <strong>{getProductName(availableProduct, language)}</strong>
+                      <small>{getProductCategory(availableProduct, language)}</small>
                     </span>
-                    <em>{formatPrice(availableProduct.pricePerDay)}</em>
+                    <em>{formatPrice(availableProduct.pricePerDay, language, t)}</em>
                   </label>
                 ))
               ) : (
-                <p className="picker-empty">Ingen produkter matcher søket.</p>
+                <p className="picker-empty">{t.booking.noProductMatches}</p>
               )}
             </div>
           </div>
         ) : null}
 
-        <div className="selected-products" aria-label="Valgt utstyr">
+        <div className="selected-products" aria-label={t.booking.selectedProducts}>
           <div className="selected-products-header">
-            <h3>Valgt utstyr</h3>
+            <h3>{t.booking.selectedProducts}</h3>
             <button
               className="inline-action"
               type="button"
               onClick={() => setShowProductPicker((isOpen) => !isOpen)}
               aria-expanded={showProductPicker}
             >
-              {showProductPicker ? 'Skjul valg' : '+ Legg til flere produkter'}
+              {showProductPicker ? t.booking.hideChoices : t.booking.addMoreProducts}
             </button>
           </div>
 
@@ -308,16 +337,16 @@ function BookingModal({
             {selectedProducts.map((selectedProduct) => (
               <div className="selected-product" key={selectedProduct.id}>
                 <span>
-                  <strong>{selectedProduct.name}</strong>
-                  <small>{formatPrice(selectedProduct.pricePerDay)}</small>
+                  <strong>{getProductName(selectedProduct, language)}</strong>
+                  <small>{formatPrice(selectedProduct.pricePerDay, language, t)}</small>
                 </span>
                 {selectedProduct.id !== product.id ? (
                   <button
                     type="button"
                     onClick={() => removeSelectedProduct(selectedProduct.id)}
-                    aria-label={`Fjern ${selectedProduct.name}`}
+                    aria-label={t.booking.removeProduct(getProductName(selectedProduct, language))}
                   >
-                    Fjern
+                    {t.booking.remove}
                   </button>
                 ) : null}
               </div>
@@ -333,34 +362,32 @@ function BookingModal({
           error={bookingsError}
           updatedAt={bookingsUpdatedAt}
           onRefresh={onRefreshBookings}
+          language={language}
+          t={t}
         />
 
         <form className="booking-form" onSubmit={handleSubmit}>
           <div className="form-grid">
-            <label htmlFor={`${formId}-startDate`}>
-              Startdato
-              <input
-                id={`${formId}-startDate`}
-                type="date"
-                name="startDate"
-                min={todayDateKey}
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <label htmlFor={`${formId}-endDate`}>
-              Sluttdato
-              <input
-                id={`${formId}-endDate`}
-                type="date"
-                name="endDate"
-                min={formData.startDate || todayDateKey}
-                value={formData.endDate}
-                onChange={handleChange}
-                required
-              />
-            </label>
+            <DateField
+              id={`${formId}-startDate`}
+              label={t.booking.startDate}
+              name="startDate"
+              min={todayDateKey}
+              value={formData.startDate}
+              onChange={handleChange}
+              language={language}
+              t={t}
+            />
+            <DateField
+              id={`${formId}-endDate`}
+              label={t.booking.endDate}
+              name="endDate"
+              min={formData.startDate || todayDateKey}
+              value={formData.endDate}
+              onChange={handleChange}
+              language={language}
+              t={t}
+            />
           </div>
 
           <label className="checkbox-field" htmlFor={`${formId}-isStudentAssociation`}>
@@ -371,41 +398,50 @@ function BookingModal({
               checked={formData.isStudentAssociation}
               onChange={handleChange}
             />
-            <span>Dette er for en studentforening</span>
+            <span>{t.booking.studentAssociation}</span>
           </label>
 
           <div className="price-estimate" aria-live="polite">
-            <span>Estimert pris</span>
+            <span>{t.booking.priceEstimate}</span>
             {priceEstimate.hasValidDates ? (
               <>
-                <strong>{formatCurrency(priceEstimate.total)}</strong>
+                <strong>{formatCurrency(priceEstimate.total, language, t)}</strong>
                 <small>
-                  {priceEstimate.dayCount} {priceEstimate.dayCount === 1 ? 'dag' : 'dager'} x{' '}
-                  {formatCurrency(selectedPricePerDay)}
+                  {priceEstimate.dayCount}{' '}
+                  {priceEstimate.dayCount === 1 ? t.booking.day : t.booking.days} x{' '}
+                  {formatCurrency(selectedPricePerDay, language, t)}
                   {priceEstimate.weekendFee > 0
-                    ? ` + ${formatCurrency(priceEstimate.weekendFee)} helgetillegg (${selectedProducts.length} ${selectedProducts.length === 1 ? 'produkt' : 'produkter'} x ${priceEstimate.weekendDayCount} ${priceEstimate.weekendDayCount === 1 ? 'helgedag' : 'helgedager'})`
+                    ? t.booking.weekendFee(
+                        formatCurrency(priceEstimate.weekendFee, language, t),
+                        selectedProducts.length,
+                        selectedProducts.length === 1 ? t.booking.product : t.booking.products,
+                        priceEstimate.weekendDayCount,
+                        priceEstimate.weekendDayCount === 1
+                          ? t.booking.weekendDay
+                          : t.booking.weekendDays,
+                      )
                     : ''}
                   {priceEstimate.includesWeekend && formData.isStudentAssociation
-                    ? ' - helgetillegg fjernet for studentforening'
+                    ? t.booking.studentWeekendWaiver
                     : ''}
                 </small>
               </>
             ) : (
               <>
-                <strong>Velg datoer</strong>
-                <small>Estimatet vises før du sender forespørselen.</small>
+                <strong>{t.booking.chooseDates}</strong>
+                <small>{t.booking.estimateHint}</small>
               </>
             )}
           </div>
 
           {isBlockedByOverlap ? (
             <div className="form-message form-message-warning" role="alert">
-              Valgte datoer er ikke tilgjengelige for ett eller flere valgte produkter.
+              {t.booking.overlapWarning}
             </div>
           ) : null}
 
           <label htmlFor={`${formId}-name`}>
-            Navn
+            {t.booking.name}
             <input
               id={`${formId}-name`}
               type="text"
@@ -419,7 +455,7 @@ function BookingModal({
 
           <div className="form-grid">
             <label htmlFor={`${formId}-email`}>
-              E-post
+              {t.booking.email}
               <input
                 id={`${formId}-email`}
                 type="email"
@@ -431,7 +467,7 @@ function BookingModal({
               />
             </label>
             <label htmlFor={`${formId}-phone`}>
-              Telefon
+              {t.booking.phone}
               <input
                 id={`${formId}-phone`}
                 type="tel"
@@ -445,20 +481,20 @@ function BookingModal({
           </div>
 
           <label htmlFor={`${formId}-message`}>
-            Melding
+            {t.booking.message}
             <textarea
               id={`${formId}-message`}
               name="message"
               value={formData.message}
               onChange={handleChange}
               rows="4"
-              placeholder="Fortell gjerne litt om arrangementet."
+              placeholder={t.booking.messagePlaceholder}
             />
           </label>
 
           {status === 'success' ? (
             <div className="form-message form-message-success" role="status">
-              Forespørselen er sendt. Jeg tar kontakt for å bekrefte leien.
+              {t.booking.success}
             </div>
           ) : null}
 
@@ -478,9 +514,7 @@ function BookingModal({
               selectedProductIds.length === 0
             }
           >
-            {isSubmitting
-              ? 'Sender...'
-              : `Send forespørsel${selectedProductIds.length > 1 ? ` (${selectedProductIds.length})` : ''}`}
+            {isSubmitting ? t.booking.submitting : t.booking.submit(selectedProductIds.length)}
           </button>
         </form>
       </section>

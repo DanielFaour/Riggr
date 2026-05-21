@@ -1,18 +1,31 @@
 import { getUnavailableBookingsForProduct } from '../utils/dateOverlap'
 import { formatDate } from '../utils/formatDate'
+import { getProductName } from '../utils/productDisplay'
 
-function formatUpdatedAt(updatedAt) {
+function formatUpdatedAt(updatedAt, language, t) {
   if (!updatedAt) {
-    return 'Ikke oppdatert ennå'
+    return t.availability.notUpdated
   }
 
-  return `Oppdatert ${new Intl.DateTimeFormat('nb-NO', {
+  const time = new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'nb-NO', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(updatedAt)}`
+  }).format(updatedAt)
+
+  return t.availability.updated(time)
 }
 
-function Availability({ bookings, products, productIds, isLoading, error, updatedAt, onRefresh }) {
+function Availability({
+  bookings,
+  products,
+  productIds,
+  isLoading,
+  error,
+  updatedAt,
+  onRefresh,
+  language,
+  t,
+}) {
   const unavailableGroups = productIds
     .map((productId) => ({
       productId,
@@ -25,14 +38,16 @@ function Availability({ bookings, products, productIds, isLoading, error, update
     <div className="availability">
       <div className="availability-header">
         <div>
-          <h3>Utilgjengelige datoer:</h3>
-          <span>{isLoading ? 'Oppdaterer tilgjengelighet...' : formatUpdatedAt(updatedAt)}</span>
+          <h3>{t.availability.title}</h3>
+          <span>
+            {isLoading ? t.availability.updating : formatUpdatedAt(updatedAt, language, t)}
+          </span>
         </div>
         <button type="button" onClick={onRefresh} disabled={isLoading}>
-          Oppdater
+          {t.availability.refresh}
         </button>
       </div>
-      {isLoading ? <p>Laster tilgjengelighet...</p> : null}
+      {isLoading ? <p>{t.availability.loading}</p> : null}
 
       {!isLoading && error ? (
         <p className="availability-error">{error}</p>
@@ -42,12 +57,17 @@ function Availability({ bookings, products, productIds, isLoading, error, update
         <div className="availability-groups">
           {unavailableGroups.map((group) => (
             <div className="availability-group" key={group.productId}>
-              <strong>{group.product?.name || 'Valgt produkt'}</strong>
+              <strong>
+                {group.product ? getProductName(group.product, language) : t.availability.selectedProduct}
+              </strong>
               <ul>
                 {group.bookings.map((booking) => (
                   <li key={booking.id}>
-                    {formatDate(booking.startDate)} til {formatDate(booking.endDate)},{' '}
-                    {booking.status}
+                    {t.availability.dateRange(
+                      formatDate(booking.startDate, language, t),
+                      formatDate(booking.endDate, language, t),
+                      booking.status,
+                    )}
                   </li>
                 ))}
               </ul>
@@ -57,7 +77,7 @@ function Availability({ bookings, products, productIds, isLoading, error, update
       ) : null}
 
       {!isLoading && !error && unavailableGroups.length === 0 ? (
-        <p>Ingen registrerte bookinger for valgte produkter.</p>
+        <p>{t.availability.empty}</p>
       ) : null}
     </div>
   )

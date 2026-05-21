@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { formatPrice } from '../utils/formatDate'
+import { getProductCategory, getProductDescription, getProductName } from '../utils/productDisplay'
 
-function ProductCard({ product, onRequest }) {
+function ProductCard({ product, onRequest, language, t }) {
   const [imageFailed, setImageFailed] = useState(false)
   const shouldShowImage = product.imageUrl && !imageFailed
+  const productName = getProductName(product, language)
+  const productCategory = getProductCategory(product, language)
+  const productDescription = getProductDescription(product, language)
 
   return (
     <article className="product-card">
@@ -11,25 +15,25 @@ function ProductCard({ product, onRequest }) {
         {shouldShowImage ? (
           <img
             src={product.imageUrl}
-            alt={product.name}
+            alt={productName}
             className="product-image"
             loading="lazy"
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className="product-placeholder" aria-label="Produktbilde mangler">
-            <span>{product.category || 'Utstyr'}</span>
+          <div className="product-placeholder" aria-label={t.products.imageMissing}>
+            <span>{productCategory || t.products.fallbackCategory}</span>
           </div>
         )}
       </div>
       <div className="product-content">
-        <p className="product-category">{product.category}</p>
-        <h3>{product.name}</h3>
-        <p className="product-description">{product.description}</p>
+        <p className="product-category">{productCategory}</p>
+        <h3>{productName}</h3>
+        <p className="product-description">{productDescription}</p>
         <div className="product-footer">
-          <span className="product-price">{formatPrice(product.pricePerDay)}</span>
+          <span className="product-price">{formatPrice(product.pricePerDay, language, t)}</span>
           <button className="button button-secondary" type="button" onClick={onRequest}>
-            Send forespørsel
+            {t.products.request}
           </button>
         </div>
       </div>
